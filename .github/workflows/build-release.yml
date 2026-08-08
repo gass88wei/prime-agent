@@ -112,20 +112,24 @@ jobs:
         run: npm run build
       - name: Prune dev dependencies
         shell: bash
-        run: npm prune --omit=dev
+        run: |
+          df -h .
+          npm prune --omit=dev
+          df -h .
+          du -sh node_modules
       - name: Assemble runnable package (node_modules + unpacked workspaces)
         shell: bash
         run: |
           set -e
           TMP=$(mktemp -d)
-          mkdir -p winpkg/node_modules
-          cp -r node_modules/* winpkg/node_modules/
+          mkdir -p winpkg
+          mv node_modules winpkg/node_modules
           rm -rf winpkg/node_modules/@earendil-works
           mkdir -p winpkg/node_modules/@earendil-works
           for d in packages/*/; do
             [ -f "$d/package.json" ] || continue
-            name=$(node -e "console.log(require('./'"$d"'package.json').name.split('/')[1]);" 2>/dev/null || basename "$d")
-            [ -n "$name" ] || name=$(basename "$d")
+            grep -q '"@earendil-works/' "$d/package.json" || continue
+            name=$(basename "$d")
             tg=$(npm pack "$d" --silent --pack-destination "$TMP" | tail -1)
             mkdir -p "$TMP/u"
             tar -xzf "$TMP/$tg" -C "$TMP/u"
@@ -137,7 +141,9 @@ jobs:
           tar -xzf "$TMP/$tg" -C winpkg/
           mv winpkg/package/* winpkg/ && rmdir winpkg/package
           printf '@echo off\r\nnode "%%~dp0dist/bundle/cli.js" %%*\r\n' > winpkg/pi.cmd
-          find winpkg -maxdepth 2 -type d | head -20
+          echo "=== assembled ==="
+          find winpkg -maxdepth 2 -type d | head -25
+          df -h .
       - name: Package zip
         shell: pwsh
         run: |
