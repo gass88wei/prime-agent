@@ -131,10 +131,10 @@ jobs:
           cp -r examples binaries/windows-x64/
           cp -r skills binaries/windows-x64/
       - name: Package zip
-        shell: bash
+        shell: pwsh
         run: |
           cd packages/coding-agent/binaries
-          tar -a -cf pi-windows-x64.zip windows-x64
+          Compress-Archive -Path windows-x64 -DestinationPath pi-windows-x64.zip -Force
       - name: Upload binary artifact
         uses: actions/upload-artifact@v4
         with:
