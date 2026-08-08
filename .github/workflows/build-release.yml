@@ -104,37 +104,50 @@ jobs:
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
-      - name: Install dependencies (bun install generates native addon manifest)
+      - name: Install dependencies
         shell: bash
-        run: bun install
+        run: npm ci
       - name: Build packages
         shell: bash
         run: npm run build
-      - name: Build Windows binary (zeromq embedded)
+      - name: Prune dev dependencies
+        shell: bash
+        run: npm prune --omit=dev
+      - name: Assemble runnable package (node_modules + unpacked workspaces)
         shell: bash
         run: |
-          cd packages/coding-agent
-          mkdir -p binaries/windows-x64
-          bun build --compile --external koffi --target=bun-windows-x64 ./dist/bun/cli.js --outfile binaries/windows-x64/pi.exe
-      - name: Assemble release folder
-        shell: bash
-        run: |
-          cd packages/coding-agent
-          mkdir -p binaries/windows-x64
-          cp package.json README.md CHANGELOG.md binaries/windows-x64/
-          cp ../../node_modules/@silvia-odwyer/photon-node/photon_rs_bg.wasm binaries/windows-x64/
-          mkdir -p binaries/windows-x64/theme binaries/windows-x64/assets
-          cp dist/modes/interactive/theme/*.json binaries/windows-x64/theme/
-          cp dist/modes/interactive/assets/* binaries/windows-x64/assets/
-          cp -r dist/core/export-html binaries/windows-x64/
-          cp -r docs binaries/windows-x64/
-          cp -r examples binaries/windows-x64/
-          cp -r skills binaries/windows-x64/
+          set -e
+          TMP=$(mktemp -d)
+          mkdir -p winpkg/node_modules
+          cp -r node_modules/* winpkg/node_modules/
+          rm -rf winpkg/node_modules/@earendil-works
+          mkdir -p winpkg/node_modules/@earendil-works
+          for d in packages/*/; do
+            [ -f "$d/package.json" ] || continue
+            name=$(node -e "console.log(require('./'"$d"'package.json').name.split('/')[1]);" 2>/dev/null || basename "$d")
+            [ -n "$name" ] || name=$(basename "$d")
+            tg=$(npm pack "$d" --silent --pack-destination "$TMP" | tail -1)
+            mkdir -p "$TMP/u"
+            tar -xzf "$TMP/$tg" -C "$TMP/u"
+            mkdir -p "winpkg/node_modules/@earendil-works/$name"
+            cp -r "$TMP/u/package/." "winpkg/node_modules/@earendil-works/$name/"
+            rm -rf "$TMP/u"
+          done
+          tg=$(npm pack packages/coding-agent --silent --pack-destination "$TMP" | tail -1)
+          tar -xzf "$TMP/$tg" -C winpkg/
+          mv winpkg/package/* winpkg/ && rmdir winpkg/package
+          cat > winpkg/pi.cmd <<'EOF'
+@echo off
+node "%~dp0dist/bundle/cli.js" %*
+EOF
+          find winpkg -maxdepth 2 -type d | head -20
       - name: Package zip
         shell: pwsh
         run: |
-          cd packages/coding-agent/binaries
-          Compress-Archive -Path windows-x64 -DestinationPath pi-windows-x64.zip -Force
+          $src = "D:\a\prime-agent\prime-agent\winpkg"
+          $dest = "D:\a\prime-agent\prime-agent\packages\coding-agent\binaries"
+          New-Item -ItemType Directory -Force -Path $dest | Out-Null
+          Compress-Archive -Path $src -DestinationPath "$dest\pi-windows-x64.zip" -Force
       - name: Upload binary artifact
         uses: actions/upload-artifact@v4
         with:
