@@ -106,7 +106,7 @@ jobs:
           bun-version: latest
       - name: Install dependencies (bun install generates native addon manifest)
         shell: bash
-        run: bun install --frozen-lockfile
+        run: bun install
       - name: Build packages
         shell: bash
         run: npm run build
