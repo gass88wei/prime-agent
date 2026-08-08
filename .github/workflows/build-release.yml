@@ -136,10 +136,7 @@ jobs:
           tg=$(npm pack packages/coding-agent --silent --pack-destination "$TMP" | tail -1)
           tar -xzf "$TMP/$tg" -C winpkg/
           mv winpkg/package/* winpkg/ && rmdir winpkg/package
-          cat > winpkg/pi.cmd <<'EOF'
-@echo off
-node "%~dp0dist/bundle/cli.js" %*
-EOF
+          printf '@echo off\r\nnode "%%~dp0dist/bundle/cli.js" %%*\r\n' > winpkg/pi.cmd
           find winpkg -maxdepth 2 -type d | head -20
       - name: Package zip
         shell: pwsh
