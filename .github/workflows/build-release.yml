@@ -145,7 +145,7 @@ jobs:
           $src = "D:\a\prime-agent\prime-agent\winpkg"
           $dest = "D:\a\prime-agent\prime-agent\packages\coding-agent\binaries"
           New-Item -ItemType Directory -Force -Path $dest | Out-Null
-          Compress-Archive -Path $src -DestinationPath "$dest\pi-windows-x64.zip" -Force
+          Compress-Archive -Path "$src\*" -DestinationPath "$dest\pi-windows-x64.zip" -Force
       - name: Upload binary artifact
         uses: actions/upload-artifact@v4
         with:
