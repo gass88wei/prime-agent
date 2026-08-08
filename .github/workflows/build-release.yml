@@ -78,14 +78,16 @@ jobs:
           node-version: '22'
       - uses: oven-sh/setup-bun@v2
         with:
-          version: latest
+          bun-version: latest
       - name: Build standalone binaries
         run: ./scripts/build-binaries.sh
       - name: Upload binary artifacts
         uses: actions/upload-artifact@v4
         with:
           name: release-binaries
-          path: packages/coding-agent/binaries/*.zip
+          path: |
+            packages/coding-agent/binaries/*.zip
+            packages/coding-agent/binaries/*.tar.gz
           if-no-files-found: error
 
   publish:
@@ -95,6 +97,9 @@ jobs:
       VERSION: ${{ needs.build.outputs.version }}
       TAG: ${{ needs.build.outputs.tag }}
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Download tarball artifacts
         uses: actions/download-artifact@v4
         with:
