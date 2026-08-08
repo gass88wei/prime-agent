@@ -106,9 +106,7 @@ jobs:
           bun-version: latest
       - name: Install dependencies
         shell: bash
-        run: |
-          npm ci
-          npm install --no-save --force koffi@2.16.2
+        run: npm ci
       - name: Build packages
         shell: bash
         run: npm run build
@@ -122,10 +120,7 @@ jobs:
         shell: bash
         run: |
           cd packages/coding-agent
-          mkdir -p binaries/windows-x64/node_modules/koffi/build/koffi/win32_x64
-          cp node_modules/koffi/index.js binaries/windows-x64/node_modules/koffi/
-          cp node_modules/koffi/package.json binaries/windows-x64/node_modules/koffi/
-          cp node_modules/koffi/build/koffi/win32_x64/koffi.node binaries/windows-x64/node_modules/koffi/build/koffi/win32_x64/
+          mkdir -p binaries/windows-x64
           cp package.json README.md CHANGELOG.md binaries/windows-x64/
           cp ../../node_modules/@silvia-odwyer/photon-node/photon_rs_bg.wasm binaries/windows-x64/
           mkdir -p binaries/windows-x64/theme binaries/windows-x64/assets
