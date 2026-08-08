@@ -121,7 +121,6 @@ jobs:
         shell: bash
         run: |
           set -e
-          TMP=$(mktemp -d)
           mkdir -p winpkg
           mv node_modules winpkg/node_modules
           rm -rf winpkg/node_modules/@earendil-works
@@ -130,19 +129,15 @@ jobs:
             [ -f "$d/package.json" ] || continue
             grep -q '"@earendil-works/' "$d/package.json" || continue
             name=$(basename "$d")
-            tg=$(npm pack "$d" --silent --pack-destination "$TMP" | tail -1)
-            mkdir -p "$TMP/u"
-            tar -xzf "$TMP/$tg" -C "$TMP/u"
             mkdir -p "winpkg/node_modules/@earendil-works/$name"
-            cp -r "$TMP/u/package/." "winpkg/node_modules/@earendil-works/$name/"
-            rm -rf "$TMP/u"
+            cp -r "$d/." "winpkg/node_modules/@earendil-works/$name/"
+            rm -rf "winpkg/node_modules/@earendil-works/$name/node_modules"
+            echo "packed $name"
           done
-          tg=$(npm pack packages/coding-agent --silent --pack-destination "$TMP" | tail -1)
-          tar -xzf "$TMP/$tg" -C winpkg/
-          mv winpkg/package/* winpkg/ && rmdir winpkg/package
+          cp -r packages/coding-agent/dist packages/coding-agent/docs packages/coding-agent/examples packages/coding-agent/skills packages/coding-agent/postinstall.cjs packages/coding-agent/package.json winpkg/
           printf '@echo off\r\nnode "%%~dp0dist/bundle/cli.js" %%*\r\n' > winpkg/pi.cmd
           echo "=== assembled ==="
-          find winpkg -maxdepth 2 -type d | head -25
+          ls winpkg/
           df -h .
       - name: Package zip
         shell: pwsh
