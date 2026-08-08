@@ -104,9 +104,9 @@ jobs:
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
-      - name: Install dependencies
+      - name: Install dependencies (bun install generates native addon manifest)
         shell: bash
-        run: npm ci
+        run: bun install --frozen-lockfile
       - name: Build packages
         shell: bash
         run: npm run build
